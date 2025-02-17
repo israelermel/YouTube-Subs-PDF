@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulário de Geração de PDF</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .disabled-btn {
+            background-color: #d3d3d3; /* Cor cinza */
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h1>PDF Legendas do YouTube v3</h1>
+        <form id="pdf-form" method="POST">
+            <div class="form-group">
+                <label for="content-type">Tipo de Conteúdo:</label>
+                <select id="content-type" name="content_type">
+                    <option value="playlist">Playlist</option>
+                    <option value="video">Vídeo</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="content-id" id="content-id-label">ID da Playlist:</label>
+                <input type="text" id="content-id" name="content_id" placeholder="Insira o ID da Playlist" required>
+            </div>
+
+            <div class="form-group">
+                <label for="language">Idioma da Legenda:</label>
+                <select id="language" name="language">
+                    <option value="pt">Português</option>
+                    <option value="en">Inglês</option>
+                    <option value="es">Espanhol</option>
+                    <option value="fr">Francês</option>
+                </select>
+            </div>
+
+            <button type="submit" class="generate-pdf-btn">Gerar PDF</button>
+        </form>
+
+        <!-- Loader -->
+        <div id="loader" class="loader" style="display: none;">
+            <div class="spinner"></div>
+            <p>Processando...</p>
+        </div>
+
+        <!-- Link de download -->
+        <div id="download-link" style="display: none; margin-top: 1rem;">
+            <a id="download-btn" href="#" class="generate-pdf-btn">Baixar PDF</a>
+        </div>
+
+        <div id="error-message" style="display: none; color: red;"></div>
+    </div>
+
+    <script>
+        const contentType = document.getElementById('content-type');
+        const contentIdLabel = document.getElementById('content-id-label');
+        const contentIdInput = document.getElementById('content-id');
+        const generatePdfBtn = document.querySelector('.generate-pdf-btn');
+
+        contentType.addEventListener('change', () => {
+            if (contentType.value === 'playlist') {
+                contentIdLabel.textContent = 'ID da Playlist:';
+                contentIdInput.placeholder = 'Insira o ID da Playlist';
+            } else {
+                contentIdLabel.textContent = 'ID do Vídeo:';
+                contentIdInput.placeholder = 'Insira o ID do Vídeo';
+            }
+        });
+
+        // Script para enviar o formulário via AJAX e exibir o loader
+        const form = document.getElementById('pdf-form');
+        const loader = document.getElementById('loader');
+        const downloadLink = document.getElementById('download-link');
+        const downloadBtn = document.getElementById('download-btn');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Evita o envio tradicional do formulário
+
+            // Desabilita o botão, altera a cor e exibe o loader
+            generatePdfBtn.disabled = true;
+            generatePdfBtn.classList.add('disabled-btn');
+            loader.style.display = 'block';
+            downloadLink.style.display = 'none';
+
+            // Coleta os dados do formulário
+            const formData = new FormData(form);
+
+            try {
+                // Envia os dados para o backend (Python)
+                const response = await fetch('/', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+               if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    downloadBtn.href = url;
+                    downloadLink.style.display = 'block'; // Exibe o link de download
+                } else {
+                    const errorMessage = await response.text();
+                    document.getElementById('error-message').textContent = errorMessage;
+                    document.getElementById('error-message').style.display = 'block';
+                    throw new Error('Erro ao processar o arquivo');
+                }
+            } catch (error) {
+                alert(error.message); // Exibe uma mensagem de erro
+            } finally {
+                // Oculta o loader, reabilita o botão e remove a classe de cor após o processamento
+                loader.style.display = 'none';
+                generatePdfBtn.disabled = false;
+                generatePdfBtn.classList.remove('disabled-btn');
+            }
+        });
+    </script>
+</body>
+</html>
