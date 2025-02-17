@@ -1,7 +1,7 @@
 services:
   web:
     build: .
-    container_name: you-subs-pdf
+    container_name: youtube-subs-pdf
     ports:
       - "5000:5000"
     volumes:
