@@ -29,7 +29,7 @@ class YouTubeCrawler:
     def get_video_ids(self):
         self.setup_driver()
         self.driver.get(self.url)
-        time.sleep(15)
+        time.sleep(5)
         video_ids = []
 
         if 'playlist' in self.url:

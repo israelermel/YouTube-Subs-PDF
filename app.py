@@ -1,13 +1,14 @@
-from flask import Flask, request, render_template, send_file, jsonify
+from flask import Flask, request, render_template, send_file, after_this_request
 import zipfile
 import os
 import logging
 from web.LoggerConfig import LoggerConfig
 from web.YouTubeCrawler import YouTubeCrawler
 from web.YouTubeSubtitleToPDF import YouTubeSubtitleToPDF
+from dotenv import load_dotenv
 
 # Load environment variables from .env file
-# load_dotenv()
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -96,7 +97,17 @@ def index():
 
 @app.route('/download/<filename>')
 def download_file(filename):
-    return send_file(os.path.join(ZIP_DIR, filename), as_attachment=True)
+    file_path = os.path.join(ZIP_DIR, filename)
+
+    @after_this_request
+    def remove_file(response):
+        try:
+            os.remove(file_path)
+        except Exception as error:
+            logging.error(f'Error removing file: {error}')
+        return response
+
+    return send_file(file_path, as_attachment=True)
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+    app.run(debug=True, port=5000)
